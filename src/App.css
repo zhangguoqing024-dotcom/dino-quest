@@ -14,10 +14,25 @@
   border-bottom: 1px solid rgba(255,255,255,0.08);
 }
 .brand { font-size: 20px; font-weight: 700; letter-spacing: 1px; }
+.header-actions { display: flex; gap: 6px; }
 .reset {
   background: transparent; border: 1px solid #475569; color: #94a3b8;
-  padding: 6px 12px; border-radius: 999px; font-size: 12px; cursor: pointer;
+  padding: 6px 10px; border-radius: 999px; font-size: 12px; cursor: pointer;
 }
+.reset.danger { border-color: #7f1d1d; color: #ef4444; }
+
+/* Restore modal */
+.restore-modal { max-width: 420px; text-align: left; }
+.restore-modal .modal-title { text-align: center; margin-bottom: 8px; }
+.restore-hint { font-size: 12px; color: #94a3b8; text-align: center; margin-bottom: 16px; }
+.snap-list { list-style: none; padding: 0; margin: 0; max-height: 300px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
+.snap-list li {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 12px; background: rgba(255,255,255,0.05); border-radius: 10px;
+}
+.snap-date { font-size: 14px; font-weight: 600; }
+.snap-time { font-size: 11px; color: #94a3b8; margin-top: 2px; }
+.restore-divider { text-align: center; margin: 16px 0 10px; color: #64748b; font-size: 12px; }
 
 /* User switcher */
 .user-switch {

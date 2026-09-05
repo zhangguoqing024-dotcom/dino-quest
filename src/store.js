@@ -24,6 +24,8 @@ export function careReasons(dino) {
 }
 
 const STORAGE_KEY = 'dino-quest:v1'
+const SNAPSHOTS_KEY = 'dino-quest:snapshots'
+const MAX_SNAPSHOTS = 14 // 保留最近 14 天
 
 const DEFAULT_USERS = [
   { id: 'papa',    name: '爸爸', emoji: '🦖', color: '#f97316' },
@@ -138,6 +140,10 @@ const listeners = new Set()
   for (const u of Object.values(state.users)) {
     u.dino = decayDino(u.dino, now)
   }
+  // 首次加载或刷新后立刻写一次，确保 localStorage 永远有当前状态
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
+  // 每天自动存一份快照（同一天多次打开只覆盖当天的）
+  takeSnapshot()
 }
 
 function save() {
@@ -275,9 +281,63 @@ export function setStageImage(userId, stageIndex, dataUrl) {
 }
 
 export function resetAll() {
-  if (confirm('确定清空所有数据吗？不能恢复。')) {
-    localStorage.removeItem(STORAGE_KEY)
-    state = initial()
+  const answer = prompt('这会清空全家所有积分、恐龙、仓库，且不可恢复。\n\n如果确定，请输入"重置"两个字：')
+  if (answer !== '重置') return
+  localStorage.removeItem(STORAGE_KEY)
+  state = initial()
+  save()
+}
+
+// 备份/恢复
+export function exportData() {
+  return JSON.stringify(state, null, 2)
+}
+
+export function importData(json) {
+  try {
+    const parsed = JSON.parse(json)
+    if (parsed.version !== 1 || !parsed.users) throw new Error('格式不对')
+    state = parsed
     save()
+    return true
+  } catch (e) {
+    alert('导入失败：' + e.message)
+    return false
   }
+}
+
+// --- 自动每日快照（存在 localStorage 里，占用几 KB 忽略不计）---
+
+function todayKey() {
+  return new Date().toISOString().slice(0, 10) // YYYY-MM-DD
+}
+
+function readSnapshots() {
+  try {
+    return JSON.parse(localStorage.getItem(SNAPSHOTS_KEY) || '[]')
+  } catch {
+    return []
+  }
+}
+
+function writeSnapshots(list) {
+  localStorage.setItem(SNAPSHOTS_KEY, JSON.stringify(list))
+}
+
+export function listSnapshots() {
+  return readSnapshots().map(({ date, at }) => ({ date, at }))
+}
+
+export function takeSnapshot() {
+  const today = todayKey()
+  const list = readSnapshots().filter(s => s.date !== today) // 同一天覆盖
+  list.unshift({ date: today, at: Date.now(), data: JSON.stringify(state) })
+  while (list.length > MAX_SNAPSHOTS) list.pop()
+  writeSnapshots(list)
+}
+
+export function restoreSnapshot(date) {
+  const snap = readSnapshots().find(s => s.date === date)
+  if (!snap) return false
+  return importData(snap.data)
 }

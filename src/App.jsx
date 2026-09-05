@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
-import { useStore, setCurrentUser, resetAll, tickDecay, needsCare } from './store.js'
+import { useStore, setCurrentUser, resetAll, tickDecay, needsCare, exportData } from './store.js'
+import RestoreModal from './RestoreModal.jsx'
 import Family from './screens/Family.jsx'
 import Home from './screens/Home.jsx'
 import Entry from './screens/Entry.jsx'
@@ -19,6 +20,7 @@ const TABS = [
 export default function App() {
   const state = useStore()
   const [tab, setTab] = useState('family')
+  const [restoreOpen, setRestoreOpen] = useState(false)
   const CurrentComp = TABS.find(t => t.id === tab).Comp
   const users = Object.values(state.users)
 
@@ -33,11 +35,27 @@ export default function App() {
   const currentUser = state.users[state.currentUserId]
   const currentNeedsCare = needsCare(currentUser.dino)
 
+  const handleBackup = () => {
+    const blob = new Blob([exportData()], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `dino-quest-${new Date().toISOString().slice(0, 10)}.json`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  const handleRestore = () => setRestoreOpen(true)
+
   return (
     <div className="app">
       <header className="app-header">
         <div className="brand">🦕 恐龙养成记</div>
-        <button className="reset" onClick={resetAll} title="重置所有数据">重置</button>
+        <div className="header-actions">
+          <button className="reset" onClick={handleBackup} title="下载存档备份">💾 备份</button>
+          <button className="reset" onClick={handleRestore} title="从备份恢复">📥 恢复</button>
+          <button className="reset danger" onClick={resetAll} title="清空所有数据">重置</button>
+        </div>
       </header>
 
       <nav className="user-switch">
@@ -63,6 +81,7 @@ export default function App() {
       </main>
 
       <LevelUpModal />
+      <RestoreModal open={restoreOpen} onClose={() => setRestoreOpen(false)} />
 
       <nav className="tabbar">
         {TABS.map(t => (
